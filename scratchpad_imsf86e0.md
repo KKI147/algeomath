@@ -11,3 +11,6 @@
 - [ ] Type `y = 2x + 1` and verify purple function graph
 - [ ] Type `y = -x + 3` and verify second function (name: g)
 - [ ] Delete function graph with DELETE tool
+- [ ] Create points A=(0,0), B=(3,0), then type `AB` for segment
+- [ ] Type `⊙(A, C)` or `⊙AC` for circle with center A
+- [ ] Re-type `AB` and verify no duplicate segment
