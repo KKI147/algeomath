@@ -1,0 +1,224 @@
+/* algeomath/style.css */
+
+/* 폰트 및 공통 변수 정의 */
+:root {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* popscale: #wrap 은 common_sci 1920×1020 고정 — width/height 100% 덮어쓰기 금지 */
+.contentsWrap,
+.contents.clickPage {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.contents.clickPage {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 알지오메스 메인 감싸기 (설계 해상도 = common_sci #wrap 1920×1020) */
+.algeo-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 1920px;
+    height: 1020px;
+    background-color: var(--bg-primary);
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text-primary);
+}
+
+/* 상단 도구바 */
+.algeo-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 56px;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+}
+
+/* 도구바 버튼 공통 */
+.tool-btn, .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.tool-btn:hover, .action-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.tool-btn:active, .action-btn:active {
+    transform: translateY(0);
+}
+
+/* 활성화된 도구 버튼 */
+.tool-btn.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* 버튼 아이콘 대체 텍스트/이모지용 텍스트 스타일링 */
+.tool-btn[data-tool="MOVE"]::before { content: "⬈"; font-size: 18px; }
+.tool-btn[data-tool="POINT"]::before { content: "●"; font-size: 12px; color: #ef4444; }
+.tool-btn[data-tool="POINT"].active::before { color: #ffffff; }
+.tool-btn[data-tool="SEGMENT"]::before { content: "―"; font-size: 14px; color: #2563eb; }
+.tool-btn[data-tool="SEGMENT"].active::before { color: #ffffff; }
+.tool-btn[data-tool="CIRCLE"]::before { content: "○"; font-size: 16px; color: #059669; }
+.tool-btn[data-tool="CIRCLE"].active::before { color: #ffffff; }
+.tool-btn[data-tool="DELETE"]::before { content: "🗑"; font-size: 14px; }
+
+/* 툴바 구분선 */
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background-color: var(--border-color);
+    margin: 0 4px;
+}
+
+/* 메인 프레임 (사이드바 + 캔버스) */
+.algeo-main {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: calc(100% - 56px);
+    overflow: hidden;
+}
+
+/* 좌측 대수창 사이드바 */
+.algeo-sidebar {
+    width: 280px;
+    height: 100%;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    z-index: 5;
+}
+
+.sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fafafa;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+/* 빈 목록 안내 메시지 */
+.empty-msg {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding-top: 32px;
+}
+
+/* 대수창 아이템 리스트 */
+.algebra-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: var(--transition-fast);
+}
+
+.algebra-item:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 오브젝트 컬러 인디케이터 */
+.obj-color-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.obj-color-indicator.point { background-color: #ef4444; }
+.obj-color-indicator.segment { background-color: #2563eb; }
+.obj-color-indicator.circle { background-color: #059669; }
+
+.obj-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.obj-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.obj-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* 우측 작도 캔버스 컨테이너 */
+.algeo-canvas-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    background-color: #ffffff;
+}
+
+#algeoCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: default;
+}
