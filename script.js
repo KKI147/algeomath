@@ -43,6 +43,18 @@ const ALGEBRA_COMMANDS = [
         syntax: 'Circle(A, C)',
         example: 'Circle(A,C)',
         desc: '중심 A, 둘레 점 C인 원입니다.'
+    },
+    {
+        label: '평행선',
+        syntax: 'Parallel(A, B, C)',
+        example: 'Parallel(A,B,C)',
+        desc: 'C를 지나며 AB와 평행한 직선입니다.'
+    },
+    {
+        label: '수직선',
+        syntax: 'Perpendicular(A, B, C)',
+        example: 'Perpendicular(A,B,C)',
+        desc: 'C를 지나며 AB에 수직인 직선입니다.'
     }
 ];
 
@@ -170,6 +182,8 @@ function createAlgeoUI($container) {
         '        <button class="tool-btn" data-tool="LINE" title="직선"></button>' +
         '        <button class="tool-btn" data-tool="MIDPOINT" title="중점"></button>' +
         '        <button class="tool-btn" data-tool="PERP_BISECTOR" title="수직이등분선"></button>' +
+        '        <button class="tool-btn" data-tool="PARALLEL_LINE" title="평행선"></button>' +
+        '        <button class="tool-btn" data-tool="PERP_LINE" title="수직선"></button>' +
         '        <button class="tool-btn" data-tool="CIRCLE" title="원"></button>' +
         '        <button class="tool-btn" data-tool="DELETE" title="삭제"></button>' +
         '        <span class="toolbar-divider"></span>' +
@@ -436,6 +450,130 @@ AlgeoEngine.prototype.addPerpBisector = function (name, pointId1, pointId2) {
     this.objects.push(perpBisector);
     this.objectMap[id] = perpBisector;
     return perpBisector;
+};
+
+// 기준 두 점·통과 점으로 평행선 검색 (기준 순서 무관)
+AlgeoEngine.prototype.findParallelLineByRefs = function (refP1Id, refP2Id, throughId) {
+    const list = this.objects;
+    for (let i = 0; i < list.length; i++) {
+        const obj = list[i];
+        if (obj.type === 'PARALLEL_LINE' && obj.throughId === throughId) {
+            if ((obj.refP1Id === refP1Id && obj.refP2Id === refP2Id) ||
+                (obj.refP1Id === refP2Id && obj.refP2Id === refP1Id)) {
+                return obj;
+            }
+        }
+    }
+    return null;
+};
+
+// 기준 두 점·통과 점으로 수직선 검색 (기준 순서 무관)
+AlgeoEngine.prototype.findPerpLineByRefs = function (refP1Id, refP2Id, throughId) {
+    const list = this.objects;
+    for (let i = 0; i < list.length; i++) {
+        const obj = list[i];
+        if (obj.type === 'PERP_LINE' && obj.throughId === throughId) {
+            if ((obj.refP1Id === refP1Id && obj.refP2Id === refP2Id) ||
+                (obj.refP1Id === refP2Id && obj.refP2Id === refP1Id)) {
+                return obj;
+            }
+        }
+    }
+    return null;
+};
+
+// 평행선 객체 추가 (C를 지나며 AB와 평행)
+AlgeoEngine.prototype.addParallelLine = function (name, refP1Id, refP2Id, throughId) {
+    const ref1 = this.objectMap[refP1Id];
+    const ref2 = this.objectMap[refP2Id];
+    const through = this.objectMap[throughId];
+    if (!ref1 || !ref2 || !through) { return null; }
+
+    const id = this.generateId();
+    const parallelLine = {
+        id: id,
+        type: 'PARALLEL_LINE',
+        name: name,
+        refP1Id: refP1Id,
+        refP2Id: refP2Id,
+        throughId: throughId,
+        parents: [refP1Id, refP2Id, throughId],
+        children: []
+    };
+
+    ref1.children.push(id);
+    ref2.children.push(id);
+    through.children.push(id);
+
+    this.objects.push(parallelLine);
+    this.objectMap[id] = parallelLine;
+    return parallelLine;
+};
+
+// 수직선 객체 추가 (C를 지나며 AB에 수직)
+AlgeoEngine.prototype.addPerpLine = function (name, refP1Id, refP2Id, throughId) {
+    const ref1 = this.objectMap[refP1Id];
+    const ref2 = this.objectMap[refP2Id];
+    const through = this.objectMap[throughId];
+    if (!ref1 || !ref2 || !through) { return null; }
+
+    const id = this.generateId();
+    const perpLine = {
+        id: id,
+        type: 'PERP_LINE',
+        name: name,
+        refP1Id: refP1Id,
+        refP2Id: refP2Id,
+        throughId: throughId,
+        parents: [refP1Id, refP2Id, throughId],
+        children: []
+    };
+
+    ref1.children.push(id);
+    ref2.children.push(id);
+    through.children.push(id);
+
+    this.objects.push(perpLine);
+    this.objectMap[id] = perpLine;
+    return perpLine;
+};
+
+// 평행선을 그리기 위한 두 수학 좌표점 반환
+AlgeoEngine.prototype.getParallelLinePoints = function (obj) {
+    const ref1 = this.objectMap[obj.refP1Id];
+    const ref2 = this.objectMap[obj.refP2Id];
+    const through = this.objectMap[obj.throughId];
+    if (!ref1 || !ref2 || !through) { return null; }
+
+    const dx = ref2.x - ref1.x;
+    const dy = ref2.y - ref1.y;
+    if (Math.abs(dx) < 1e-10 && Math.abs(dy) < 1e-10) {
+        return null;
+    }
+
+    return {
+        p1: { x: through.x - dx, y: through.y - dy },
+        p2: { x: through.x + dx, y: through.y + dy }
+    };
+};
+
+// 수직선을 그리기 위한 두 수학 좌표점 반환
+AlgeoEngine.prototype.getPerpLinePoints = function (obj) {
+    const ref1 = this.objectMap[obj.refP1Id];
+    const ref2 = this.objectMap[obj.refP2Id];
+    const through = this.objectMap[obj.throughId];
+    if (!ref1 || !ref2 || !through) { return null; }
+
+    const dx = ref2.x - ref1.x;
+    const dy = ref2.y - ref1.y;
+    if (Math.abs(dx) < 1e-10 && Math.abs(dy) < 1e-10) {
+        return null;
+    }
+
+    return {
+        p1: { x: through.x - dy, y: through.y + dx },
+        p2: { x: through.x + dy, y: through.y - dx }
+    };
 };
 
 // 종속 객체 좌표 재계산
@@ -776,6 +914,16 @@ AlgeoRenderer.prototype.drawObjects = function () {
             if (linePts) {
                 this.drawLine(linePts.p1, linePts.p2, isSelected, '#0891b2', [6, 4], 2.5);
             }
+        } else if (obj.type === 'PARALLEL_LINE') {
+            const linePts = this.engine.getParallelLinePoints(obj);
+            if (linePts) {
+                this.drawLine(linePts.p1, linePts.p2, isSelected, '#ea580c', [8, 4], 2.5);
+            }
+        } else if (obj.type === 'PERP_LINE') {
+            const linePts = this.engine.getPerpLinePoints(obj);
+            if (linePts) {
+                this.drawLine(linePts.p1, linePts.p2, isSelected, '#e11d48', [4, 4], 2.5);
+            }
         } else if (obj.type === 'SEGMENT') {
             const p1 = this.engine.objectMap[obj.p1Id];
             const p2 = this.engine.objectMap[obj.p2Id];
@@ -965,7 +1113,7 @@ function AlgeoApp(engine, renderer) {
     this.engine = engine;
     this.renderer = renderer;
 
-    this.currentTool = 'MOVE';        // MOVE, POINT, SEGMENT, LINE, MIDPOINT, PERP_BISECTOR, CIRCLE, DELETE
+    this.currentTool = 'MOVE';        // MOVE, POINT, SEGMENT, LINE, MIDPOINT, PERP_BISECTOR, PARALLEL_LINE, PERP_LINE, CIRCLE, DELETE
     this.isDraggingCanvas = false;    // 캔버스 드래그 여부
     this.dragStart = { x: 0, y: 0 };  // 캔버스 드래그 시작 픽셀 좌표
     this.origOffset = { x: 0, y: 0 }; // 드래그 시작 시점 뷰포트 오프셋
@@ -1093,7 +1241,8 @@ AlgeoApp.prototype.updateCanvasCursor = function () {
     } else if (this.currentTool === 'POINT') {
         cursor = 'crosshair';
     } else if (this.currentTool === 'SEGMENT' || this.currentTool === 'LINE' ||
-        this.currentTool === 'MIDPOINT' || this.currentTool === 'PERP_BISECTOR' || this.currentTool === 'CIRCLE') {
+        this.currentTool === 'MIDPOINT' || this.currentTool === 'PERP_BISECTOR' ||
+        this.currentTool === 'PARALLEL_LINE' || this.currentTool === 'PERP_LINE' || this.currentTool === 'CIRCLE') {
         cursor = 'pointer';
     } else if (this.currentTool === 'DELETE') {
         cursor = 'not-allowed';
@@ -1170,7 +1319,8 @@ AlgeoApp.prototype.handleMouseDown = function (e) {
             r.draw();
         }
     } else if (this.currentTool === 'SEGMENT' || this.currentTool === 'LINE' ||
-        this.currentTool === 'MIDPOINT' || this.currentTool === 'PERP_BISECTOR' || this.currentTool === 'CIRCLE') {
+        this.currentTool === 'MIDPOINT' || this.currentTool === 'PERP_BISECTOR' ||
+        this.currentTool === 'PARALLEL_LINE' || this.currentTool === 'PERP_LINE' || this.currentTool === 'CIRCLE') {
         if (hitPoint) {
             this.selectedPoints.push(hitPoint.id);
             this.syncHighlightToRenderer();
@@ -1238,6 +1388,46 @@ AlgeoApp.prototype.handleMouseDown = function (e) {
                     if (!this.engine.findPerpBisectorByPoints(p1Id, p2Id)) {
                         const name = 'pb' + p1.name + p2.name;
                         this.engine.addPerpBisector(name, p1Id, p2Id);
+                        this.updateAlgebraView();
+                    }
+                }
+                this.selectedPoints = [];
+                this.syncHighlightToRenderer();
+                r.draw();
+            }
+            // 평행선: 기준 두 점 + 통과 점(3번째) 선택 시 작도
+            else if (this.currentTool === 'PARALLEL_LINE' && this.selectedPoints.length === 3) {
+                const refP1Id = this.selectedPoints[0];
+                const refP2Id = this.selectedPoints[1];
+                const throughId = this.selectedPoints[2];
+
+                if (refP1Id !== refP2Id) {
+                    const ref1 = this.engine.objectMap[refP1Id];
+                    const ref2 = this.engine.objectMap[refP2Id];
+                    const through = this.engine.objectMap[throughId];
+                    if (!this.engine.findParallelLineByRefs(refP1Id, refP2Id, throughId)) {
+                        const name = 'pl' + through.name + ref1.name + ref2.name;
+                        this.engine.addParallelLine(name, refP1Id, refP2Id, throughId);
+                        this.updateAlgebraView();
+                    }
+                }
+                this.selectedPoints = [];
+                this.syncHighlightToRenderer();
+                r.draw();
+            }
+            // 수직선: 기준 두 점 + 통과 점(3번째) 선택 시 작도
+            else if (this.currentTool === 'PERP_LINE' && this.selectedPoints.length === 3) {
+                const refP1Id = this.selectedPoints[0];
+                const refP2Id = this.selectedPoints[1];
+                const throughId = this.selectedPoints[2];
+
+                if (refP1Id !== refP2Id) {
+                    const ref1 = this.engine.objectMap[refP1Id];
+                    const ref2 = this.engine.objectMap[refP2Id];
+                    const through = this.engine.objectMap[throughId];
+                    if (!this.engine.findPerpLineByRefs(refP1Id, refP2Id, throughId)) {
+                        const name = 'pp' + through.name + ref1.name + ref2.name;
+                        this.engine.addPerpLine(name, refP1Id, refP2Id, throughId);
                         this.updateAlgebraView();
                     }
                 }
@@ -1366,6 +1556,28 @@ AlgeoApp.prototype.findObjectAt = function (screenX, screenY) {
             }
         } else if (obj.type === 'PERP_BISECTOR') {
             const linePts = this.engine.getPerpBisectorLinePoints(obj);
+            if (linePts) {
+                const end = r.getLineScreenEndpoints(linePts.p1, linePts.p2);
+                if (end) {
+                    const d = this.distToLine(screenX, screenY, end.x1, end.y1, end.x2, end.y2);
+                    if (d <= 6) {
+                        return obj;
+                    }
+                }
+            }
+        } else if (obj.type === 'PARALLEL_LINE') {
+            const linePts = this.engine.getParallelLinePoints(obj);
+            if (linePts) {
+                const end = r.getLineScreenEndpoints(linePts.p1, linePts.p2);
+                if (end) {
+                    const d = this.distToLine(screenX, screenY, end.x1, end.y1, end.x2, end.y2);
+                    if (d <= 6) {
+                        return obj;
+                    }
+                }
+            }
+        } else if (obj.type === 'PERP_LINE') {
+            const linePts = this.engine.getPerpLinePoints(obj);
             if (linePts) {
                 const end = r.getLineScreenEndpoints(linePts.p1, linePts.p2);
                 if (end) {
@@ -1639,6 +1851,33 @@ AlgeoApp.prototype.parseCommaPointNames = function (name1, name2) {
     };
 };
 
+// 쉼표 구분 세 점 이름 파싱 (기준 두 점 + 통과 점)
+AlgeoApp.prototype.parseTriplePointNames = function (name1, name2, name3) {
+    const p1 = this.engine.findPointByName(name1);
+    const p2 = this.engine.findPointByName(name2);
+    const p3 = this.engine.findPointByName(name3);
+
+    if (!p1) {
+        return { success: false, message: '점 ' + name1 + '을(를) 찾을 수 없습니다.' };
+    }
+    if (!p2) {
+        return { success: false, message: '점 ' + name2 + '을(를) 찾을 수 없습니다.' };
+    }
+    if (!p3) {
+        return { success: false, message: '점 ' + name3 + '을(를) 찾을 수 없습니다.' };
+    }
+    if (p1.id === p2.id) {
+        return { success: false, message: '기준이 되는 두 점은 달라야 합니다.' };
+    }
+
+    return {
+        success: true,
+        ref1: p1,
+        ref2: p2,
+        through: p3
+    };
+};
+
 // 대수창 중점 정의 처리 (예: Midpoint(A, B))
 AlgeoApp.prototype.handleMidpointInput = function (name1, name2) {
     const parsed = this.parseCommaPointNames(name1, name2);
@@ -1665,6 +1904,40 @@ AlgeoApp.prototype.handlePerpBisectorInput = function (name1, name2) {
     if (!existing) {
         const pbName = 'pb' + parsed.p1.name + parsed.p2.name;
         this.engine.addPerpBisector(pbName, parsed.p1.id, parsed.p2.id);
+    }
+    return { success: true, message: '' };
+};
+
+// 대수창 평행선 정의 처리 (예: Parallel(A, B, C))
+AlgeoApp.prototype.handleParallelLineInput = function (name1, name2, name3) {
+    const parsed = this.parseTriplePointNames(name1, name2, name3);
+    if (!parsed.success) {
+        return { success: false, message: parsed.message };
+    }
+
+    const existing = this.engine.findParallelLineByRefs(
+        parsed.ref1.id, parsed.ref2.id, parsed.through.id
+    );
+    if (!existing) {
+        const plName = 'pl' + parsed.through.name + parsed.ref1.name + parsed.ref2.name;
+        this.engine.addParallelLine(plName, parsed.ref1.id, parsed.ref2.id, parsed.through.id);
+    }
+    return { success: true, message: '' };
+};
+
+// 대수창 수직선 정의 처리 (예: Perpendicular(A, B, C))
+AlgeoApp.prototype.handlePerpLineInput = function (name1, name2, name3) {
+    const parsed = this.parseTriplePointNames(name1, name2, name3);
+    if (!parsed.success) {
+        return { success: false, message: parsed.message };
+    }
+
+    const existing = this.engine.findPerpLineByRefs(
+        parsed.ref1.id, parsed.ref2.id, parsed.through.id
+    );
+    if (!existing) {
+        const ppName = 'pp' + parsed.through.name + parsed.ref1.name + parsed.ref2.name;
+        this.engine.addPerpLine(ppName, parsed.ref1.id, parsed.ref2.id, parsed.through.id);
     }
     return { success: true, message: '' };
 };
@@ -1757,6 +2030,20 @@ AlgeoApp.prototype.updateAlgebraView = function () {
             const p2 = this.engine.objectMap[obj.p2Id];
             if (p1 && p2) {
                 desc = '수직이등분선 ' + p1.name + p2.name;
+            }
+        } else if (obj.type === 'PARALLEL_LINE') {
+            const ref1 = this.engine.objectMap[obj.refP1Id];
+            const ref2 = this.engine.objectMap[obj.refP2Id];
+            const through = this.engine.objectMap[obj.throughId];
+            if (ref1 && ref2 && through) {
+                desc = '평행선 ∥' + ref1.name + ref2.name + ' (통과: ' + through.name + ')';
+            }
+        } else if (obj.type === 'PERP_LINE') {
+            const ref1 = this.engine.objectMap[obj.refP1Id];
+            const ref2 = this.engine.objectMap[obj.refP2Id];
+            const through = this.engine.objectMap[obj.throughId];
+            if (ref1 && ref2 && through) {
+                desc = '수직선 ⊥' + ref1.name + ref2.name + ' (통과: ' + through.name + ')';
             }
         } else if (obj.type === 'CIRCLE') {
             const center = this.engine.objectMap[obj.centerId];
@@ -1974,6 +2261,18 @@ AlgeoApp.prototype.parseAlgebraInput = function (input) {
         return this.handlePerpBisectorInput(pbMatch[1], pbMatch[2]);
     }
 
+    // 수직선: Perpendicular(A, B, C) — PerpBisector보다 먼저 검사 (Perp 접두어 충돌 방지)
+    const perpLineMatch = trimmed.match(/^perpendicular\s*\(\s*([A-Za-z][A-Za-z0-9]*)\s*,\s*([A-Za-z][A-Za-z0-9]*)\s*,\s*([A-Za-z][A-Za-z0-9]*)\s*\)$/i);
+    if (perpLineMatch) {
+        return this.handlePerpLineInput(perpLineMatch[1], perpLineMatch[2], perpLineMatch[3]);
+    }
+
+    // 평행선: Parallel(A, B, C)
+    const parallelMatch = trimmed.match(/^parallel\s*\(\s*([A-Za-z][A-Za-z0-9]*)\s*,\s*([A-Za-z][A-Za-z0-9]*)\s*,\s*([A-Za-z][A-Za-z0-9]*)\s*\)$/i);
+    if (parallelMatch) {
+        return this.handleParallelLineInput(parallelMatch[1], parallelMatch[2], parallelMatch[3]);
+    }
+
     // 직선: Line(A, B)
     const lineWordMatch = trimmed.match(/^line\s*\(\s*([A-Za-z][A-Za-z0-9]*)\s*,\s*([A-Za-z][A-Za-z0-9]*)\s*\)$/i);
     if (lineWordMatch) {
@@ -2034,7 +2333,7 @@ AlgeoApp.prototype.parseAlgebraInput = function (input) {
 
     return {
         success: false,
-        message: '지원 형식: A=(1,2), Midpoint(A,B), PerpBisector(A,B), Line(A,B)'
+        message: '지원 형식: A=(1,2), Parallel(A,B,C), Perpendicular(A,B,C), Line(A,B)'
     };
 };
 
