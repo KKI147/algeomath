@@ -7,6 +7,7 @@
 > **진행 방식**: 이 README의 로드맵 순서대로 구현합니다.  
 > 완료 여부는 [`task.md`](task.md) 에서 체크하며, 세부 설계는 [`implementation_plan.md`](implementation_plan.md) 를 참고합니다.
 
+Z:\프로젝트\Homework\2024\김경일\동아(캔버스)\
 ---
 
 ## 기술 스택
